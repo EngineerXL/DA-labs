@@ -1,9 +1,9 @@
-FLAGS = -std=c++11
+FLAGS = -std=c++14
 
 all: main.o
 	g++ $(FLAGS) main.o -o solution
 
-main: main.cpp sort.hpp pair.hpp vector.hpp
+main: main.cpp vector.hpp
 	g++ $(FLAGS) -c main.cpp
 
 clean:
