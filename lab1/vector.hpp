@@ -1,87 +1,85 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
-namespace mystd {
+namespace NMystd {
 	template<class T>
-	class vector {
+	class TVector {
 		private:
-			unsigned int capacity;
-			unsigned int maxsize;
-			T* data;
+			unsigned int Capacity;
+			unsigned int MaxSize;
+			T* Data;
 		public:
-			void assert(const unsigned int n, T elem);
+			void Assert(const unsigned int &n, T elem);
+			void PushBack(T elem);
+			unsigned int Size();
+			TVector();
+			TVector(const unsigned int &n);
+			TVector(const unsigned int &n, T elem);
+			~TVector();
 			T& operator[](const unsigned int &index);
-			void push_back(T elem);
-			unsigned int size();
-			vector();
-			vector(const unsigned int n);
-			vector(const unsigned int n, T elem);
-			~vector();
-			void f();
 	};
 
 	template<class T>
-	void vector<T>::assert(const unsigned int n, T elem) {
-		for (int i = 0; i < n; i++) {
-			data[i] = elem;
+	void TVector<T>::Assert(const unsigned int &n, T elem) {
+		for (int i = 0; i < n; ++i) {
+			Data[i] = elem;
 		}
 	}
 
 	template<class T>
-	T& vector<T>::operator[](const unsigned int &index) {
-		return data[index];
-	}
-
-	template<class T>
-	void vector<T>::push_back(T elem) {
-		if (data == 0) {
-			maxsize = 1;
-			data = new T[maxsize];
-		}
-		if (capacity == maxsize) {
-			maxsize = maxsize * 2;
-			T* new_data = new T[maxsize];
-			for (int i = 0; i < capacity; i++) {
-				new_data[i] = data[i];
+	void TVector<T>::PushBack(T elem) {
+		if (Data == 0) {
+			MaxSize = 1;
+			Data = new T[MaxSize];
+		} else if (Capacity == MaxSize) {
+			MaxSize = MaxSize * 2;
+			T* newData = new T[MaxSize];
+			for (int i = 0; i < Capacity; ++i) {
+				newData[i] = Data[i];
 			}
-			delete[] data;
-			data = new_data;
+			delete[] Data;
+			Data = newData;
 		}
-		data[capacity] = elem;
-		capacity++;
+		Data[Capacity] = elem;
+		Capacity++;
 	};
 
 	template<class T>
-	unsigned int vector<T>::size() {
-		return capacity;
+	unsigned int TVector<T>::Size() {
+		return Capacity;
 	}
 
 	template<class T>
-	vector<T>::vector() {
-		capacity = 0;
-		maxsize = 0;
-		data = 0;
+	TVector<T>::TVector() {
+		Capacity = 0;
+		MaxSize = 0;
+		Data = 0;
 	}
 
 	template<class T>
-	vector<T>::vector(const unsigned int n) {
-		capacity = n;
-		maxsize = n;
-		data = new T[capacity];
-		assert(n, T());
+	TVector<T>::TVector(const unsigned int &n) {
+		Capacity = n;
+		MaxSize = n;
+		Data = new T[Capacity];
+		Assert(n, T());
 	}
 
 	template<class T>
-	vector<T>::vector(const unsigned int n, T elem) {
-		capacity = n;
-		maxsize = n;
-		data = new T[capacity];
-		assert(n, elem);
+	TVector<T>::TVector(const unsigned int &n, T elem) {
+		Capacity = n;
+		MaxSize = n;
+		Data = new T[Capacity];
+		Assert(n, elem);
 	}
 
 	template<class T>
-	vector<T>::~vector() {
-		delete[] data;
+	TVector<T>::~TVector() {
+		delete[] Data;
+	}
+
+	template<class T>
+	T& TVector<T>::operator[](const unsigned int &index) {
+		return Data[index];
 	}
 }
 

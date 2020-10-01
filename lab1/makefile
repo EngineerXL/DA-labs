@@ -1,10 +1,5 @@
-FLAGS = -std=c++14
-
-all: main.o
-	g++ $(FLAGS) main.o -o solution
-
-main: main.cpp vector.hpp
-	g++ $(FLAGS) -c main.cpp
+all:
+	g++ -std=c++14 main.cpp -o solution
 
 clean:
-	rm -rf *.o
+	rm -rf solution
