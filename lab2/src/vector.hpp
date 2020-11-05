@@ -1,6 +1,7 @@
 #ifndef VECTOR_HPP
 #define VECTOR_HPP
 
+const unsigned long long EXPAND_FACTOR = 4;
 const unsigned long long SHRINK_FACTOR = 4;
 const unsigned long long MIN_VECTOR_SIZE = 2;
 
@@ -157,7 +158,7 @@ void TVector<T>::PopBack() {
 template<class T>
 void TVector<T>::PushBack(const T & elem) {
 	if (DataCurSize == DataMaxSize) {
-		DataMaxSize = DataMaxSize * 2;
+		DataMaxSize = DataMaxSize * EXPAND_FACTOR;
 		T* TmpData = new T[DataMaxSize];
 		for (unsigned long long i = 0; i < DataCurSize; ++i) {
 			TmpData[i] = Data[i];

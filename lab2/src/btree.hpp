@@ -1,9 +1,10 @@
 #ifndef BTREE_HPP
 #define BTREE_HPP
 
+#include "item.hpp"
 #include "vector.hpp"
 
-const unsigned long long TREE_DEGREE = 2;
+const unsigned long long TREE_DEGREE = 8;
 
 template<class T>
 struct TBtreeNode {
@@ -14,7 +15,23 @@ struct TBtreeNode {
 };
 
 template<class T>
-void SaveNode(const int & id, TBtreeNode<int>* & node, TVector< TVector<T> > & vec) {
+void FindNode(TBtreeNode<T>* curNode, TBtreeNode<T>* & res, unsigned long long & pos, const T & elem) {
+	TBtreeNode<T>* node = curNode;
+	while (node != nullptr) {
+		unsigned long long index = BinSearch(node->Data, elem);
+		if (index < node->Data.Size() and elem == node->Data[index]) {
+			res = node;
+			pos = index;
+			return;
+		} else {
+			node = node->Childs[index];
+		}
+	}
+	res = nullptr;
+}
+
+template<class T>
+void SaveNode(const unsigned int & id, TBtreeNode<T>* node, TVector< TVector<T> > & vec) {
 	if (node != nullptr) {
 		for (unsigned long long i = 0; i < node->Data.Size(); ++i) {
 			vec[id][i] = node->Data[i];
@@ -26,14 +43,14 @@ void SaveNode(const int & id, TBtreeNode<int>* & node, TVector< TVector<T> > & v
 }
 
 template<class T>
-TBtreeNode<T>* LoadNode(const unsigned long long & id, TBtreeNode<int>* & node, TVector< TVector<T> > & vec) {
-	if (id >= vec.Size() or vec[id][0] == 0llu) {
+TBtreeNode<T>* LoadNode(const unsigned long long & id, TBtreeNode<T>* & node, TVector< TVector<T> > & vec) {
+	if (id >= vec.Size() or vec[id][0].Empty()) {
 		return nullptr;
 	}
 	node = new TBtreeNode<T>;
 	node->Data[0] = vec[id][0];
 	for (unsigned long long i = 1; i < TREE_DEGREE * 2 - 2; ++i) {
-		if (vec[id][i] == 0llu) {
+		if (vec[id][i].Empty()) {
 			break;
 		} else {
 			node->Data.PushBack(vec[id][i]);
@@ -82,14 +99,17 @@ void EraseNode(TBtreeNode<T>* & node, const T & elem) {
 		index = BinSearch(curNode->Data, elem);
 	}
 	if (curNode->Childs[index] != nullptr) {
-			TBtreeNode<T>* curPathNode = curNode->Childs[index];
-			while (curPathNode->Childs[curPathNode->Childs.Size() - 1] != nullptr) {
-				curPathNode = curPathNode->Childs[curPathNode->Childs.Size() - 1];
-			}
-			T value = curPathNode->Data[curPathNode->Data.Size() - 1];
-			EraseNode(node, value);
-			curNode->Data[index] = value;
-			return;
+		TBtreeNode<T>* curPathNode = curNode->Childs[index];
+		while (curPathNode->Childs[curPathNode->Childs.Size() - 1] != nullptr) {
+			curPathNode = curPathNode->Childs[curPathNode->Childs.Size() - 1];
+		}
+		T value = curPathNode->Data[curPathNode->Data.Size() - 1];
+		EraseNode(node, value);
+		TBtreeNode<T>* curSearchNode = nullptr;
+		unsigned long long pos = 0;
+		FindNode(node, curSearchNode, pos, elem);
+		curSearchNode->Data[pos] = value;
+		return;
 	}
 	while (path.Size() > 1) {
 		TBtreeNode<T>* curPathNode = path[path.Size() - 1];
@@ -282,18 +302,7 @@ void TBtree<T>::Erase(const T & elem) {
 
 template<class T>
 void TBtree<T>::Find(TBtreeNode<T>* & res, unsigned long long & pos, const T & elem) {
-	TBtreeNode<T>* node = Root;
-	while (node != nullptr) {
-		unsigned long long index = BinSearch(node->Data, elem);
-		if (elem == node->Data[index]) {
-			res = node;
-			pos = index;
-			return;
-		} else {
-			node = node->Childs[index];
-		}
-	}
-	res = nullptr;
+	FindNode(Root, res, pos, elem);
 }
 
 template<class T>
@@ -312,46 +321,49 @@ void TBtree<T>::Insert(const T & elem) {
 	}
 }
 
-template<class T>
-void TBtree<T>::WriteInFile(FILE* file) {
+template<>
+void TBtree<TItem>::WriteInFile(FILE* file) {
 	unsigned long long height = TreeHeight(Root);
 	unsigned long long compactTreeSize = 0;
 	for (unsigned long long i = 0; i < height; ++i) {
 		compactTreeSize = compactTreeSize + Pow(2 * TREE_DEGREE - 1, i);
 	}
-	TVector< TVector<T> > compactData(compactTreeSize, TVector<T>(TREE_DEGREE * 2 - 2));
+	TVector< TVector<TItem> > compactData(compactTreeSize, TVector<TItem>(TREE_DEGREE * 2 - 2));
 	SaveNode(0, Root, compactData);
 	for (unsigned long long i = 0; i < compactTreeSize; ++i) {
 		for(unsigned long long j = 0; j < compactData[i].Size(); ++j) {
-			fwrite(&compactData[i][j], sizeof(T), 1, file);
+			fwrite(&compactData[i][j].KeySize, sizeof(unsigned short), 1, file);
+			if (compactData[i][j].KeySize > 0) {
+				fwrite(&compactData[i][j].Key, sizeof(char), 257, file);
+				fwrite(&compactData[i][j].Value, sizeof(unsigned long long), 1, file);
+			}
 		}
 	}
 }
 
-template<class T>
-void TBtree<T>::LoadFromFile(FILE* file) {
-	TVector< TVector<T> > compactData;
-	compactData.PushBack(TVector<T>());
-	T elem;
+template<>
+void TBtree<TItem>::LoadFromFile(FILE* file) {
+	TVector< TVector<TItem> > compactData;
+	compactData.PushBack(TVector<TItem>());
+	TItem curItem;
 	unsigned long long i = 0, j = 0;
-	while (fread(&elem, sizeof(T), 1, file) > 0) {
-		compactData[i].PushBack(elem);
+	while (fread(&curItem.KeySize, sizeof(unsigned short), 1, file) > 0) {
+		if (curItem.KeySize > 0) {
+			fread(&curItem.Key, sizeof(char), 257, file);
+			fread(&curItem.Value, sizeof(unsigned long long), 1, file);
+		}
+		compactData[i].PushBack(curItem);
 		++j;
 		if (j == TREE_DEGREE * 2 - 2) {
-			compactData.PushBack(TVector<T>());
+			compactData.PushBack(TVector<TItem>());
 			j = 0;
 			++i;
 		}
 	}
 	compactData.PopBack();
 	delete Root;
+	Root = nullptr;
 	LoadNode(0, Root, compactData);
-	for (unsigned long long i = 0; i < compactData.Size(); ++i) {
-		for(unsigned long long j = 0; j < compactData[i].Size(); ++j) {
-			printf("%d ", compactData[i][j]);
-		}
-		printf("\n");
-	}
 }
 
 #endif /* BTREE_HPP */
