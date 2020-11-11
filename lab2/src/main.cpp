@@ -1,6 +1,20 @@
 #include <stdio.h>
 #include "btree.hpp"
 
+// Use this to debug your B-tree!
+// void Print(TBtreeNode<TItem>* node, int depth) {
+// 	if (node != nullptr) {
+// 		for (unsigned long long i = 0; i < node->Data.Size(); ++i) {
+// 			Print(node->Childs[i], depth + 1);
+// 			for (int j = 0; j < 4 * depth; ++j) {
+// 				printf(" ");
+// 			}
+// 			printf("%s %d %llu\n", node->Data[i].Key, node->Data[i].KeySize, node->Data[i].Value);
+// 		}
+// 		Print(node->Childs[node->Data.Size()], depth + 1);
+// 	}
+// }
+
 int main() {
 	TBtree<TItem> btree;
 	char q[MAX_KEY_SIZE + 1];
