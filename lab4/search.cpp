@@ -10,12 +10,7 @@ bool operator == (const TWord & lhs, const TWord & rhs) {
 }
 
 bool operator != (const TWord & lhs, const TWord & rhs) {
-	for (unsigned short i = 0; i < MAX_WORD_SIZE; ++i) {
-		if (lhs.Word[i] == rhs.Word[i]) {
-			return false;
-		}
-	}
-	return true;
+	return !(lhs == rhs);
 }
 
 std::vector<unsigned int> PrefixFunction(const std::vector<TWord> & s) {
