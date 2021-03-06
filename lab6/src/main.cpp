@@ -1,6 +1,6 @@
 #include "big_num_lib.hpp"
 
-const TBigNum BIG_ZERO = TBigNum(1);
+const TBigNum BIG_ZERO = TBigNum("0");
 
 int main() {
     TBigNum num1, num2;

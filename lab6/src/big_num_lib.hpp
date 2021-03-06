@@ -8,52 +8,48 @@
 
 class TBigNum {
 private:
-    const int64_t Base = 10;
-    const int64_t Radix = 4;
-    const int64_t MaxDigit = 1e4;
+    const static int64_t BASE = 10;
+    const static int64_t RADIX = 4;
+    const static int64_t MAX_DIGIT = 1e4;
+
     std::vector<int64_t> Data;
-    size_t NumSize;
 
     void Normalize() {
-        while (Data[NumSize - 1] == 0 and NumSize > 1) {
+        while (Data.size() > 1 and Data.back() == 0) {
             Data.pop_back();
-            --NumSize;
         }
         std::reverse(Data.begin(), Data.end());
     }
 
     static void DivMod(const TBigNum & lhs, const TBigNum & rhs, TBigNum & div, TBigNum & mod) {
-        if (lhs.NumSize < rhs.NumSize) {
-            div.NumSize = 1;
-            div.Data.push_back(0);
+        if (lhs.Size() < rhs.Size()) {
+            div = TBigNum("0");
             mod = lhs;
             return;
         }
-        TBigNum res;
-        res.NumSize = lhs.NumSize;
-        res.Data.resize(res.NumSize);
-        TBigNum tmp(rhs.NumSize);
-        tmp.Data[tmp.NumSize - 1] = lhs.Data[0];
-        TBigNum multDig(2);
-        multDig.Data[0] = 1;
-        for (size_t i = 0; i < lhs.NumSize; ++i) {
+        TBigNum res(lhs.Size());
+        TBigNum tmp(rhs.Size());
+        tmp.Data.back() = lhs.Data[0];
+        TBigNum shiftFactor(2);
+        shiftFactor.Data[0] = 1;
+        for (size_t i = 0; i < lhs.Size(); ++i) {
             int64_t l = -1;
-            int64_t r = res.MaxDigit;
-            TBigNum mid(1);
+            int64_t r = TBigNum::MAX_DIGIT;
+            TBigNum factor(1);
             while (l + 1 < r) {
                 int64_t m = (l + r) / 2;
-                mid.Data[0] = m;
-                if (mid * rhs > tmp) {
+                factor.Data[0] = m;
+                if (factor * rhs > tmp) {
                     r = m;
                 } else {
                     l = m;
                 }
             }
-            res.Data[res.NumSize - i - 1] = l;
-            mid.Data[0] = l;
-            tmp = (tmp - mid * rhs) * multDig;
-            if (i + 1 < lhs.NumSize) {
-                tmp.Data[tmp.NumSize - 1] = lhs.Data[i + 1];
+            res.Data[res.Size() - i - 1] = l;
+            factor.Data[0] = l;
+            tmp = (tmp - factor * rhs) * shiftFactor;
+            if (i + 1 < lhs.Size()) {
+                tmp.Data.back() = lhs.Data[i + 1];
             }
         }
         res.Normalize();
@@ -63,52 +59,52 @@ private:
 public:
     TBigNum() = default;
 
-    TBigNum(const size_t & size) : NumSize(size) {
-        Data.resize(NumSize);
-    }
+    TBigNum(const size_t & size) : Data(size) {}
 
-    TBigNum(const TBigNum & num) : Data(num.Data), NumSize(num.NumSize) {}
+    TBigNum(const TBigNum & num) : Data(num.Data) {}
 
     TBigNum(const std::string & s) {
         size_t n = s.size();
-        NumSize = (n + Radix - 1) / Radix;
-        Data.resize(NumSize);
-        for (size_t i = 0; i < NumSize; ++i) {
+        Data.resize((n + RADIX - 1) / RADIX);
+        for (size_t i = 0; i < Data.size(); ++i) {
             int64_t digit = 0;
-            for (int64_t j = 0; j < Radix; ++j) {
-                int64_t ind = n - (i + 1) * Radix + j;
-                if (ind >= 0ll) {
-                    digit = digit * Base + s[ind] - '0';
+            for (int64_t j = 0; j < TBigNum::RADIX; ++j) {
+                int64_t ind = n - (i + 1) * TBigNum::RADIX + j;
+                if (ind >= 0) {
+                    digit = digit * TBigNum::BASE + s[ind] - '0';
                 }
             }
-            Data[NumSize - 1 - i] = digit;
+            Data[Data.size() - 1 - i] = digit;
         }
     }
 
     TBigNum & operator = (const TBigNum & num) {
         Data = num.Data;
-        NumSize = num.NumSize;
         return *this;
     }
 
+    size_t Size() const {
+        return Data.size();
+    }
+
 	friend TBigNum operator + (const TBigNum & lhs, const TBigNum & rhs) {
-        if (lhs.NumSize < rhs.NumSize) {
+        if (lhs.Size() < rhs.Size()) {
             return rhs + lhs;
         }
-        TBigNum res(lhs.NumSize);
+        TBigNum res(lhs.Size());
         bool flag = false;
-        for (size_t i = 0; i < lhs.NumSize; ++i) {
+        for (size_t i = 0; i < lhs.Size(); ++i) {
             int64_t sum;
-            if (i > rhs.NumSize - 1) {
-                sum = lhs.Data[lhs.NumSize - i - 1];
+            if (i > rhs.Size() - 1) {
+                sum = lhs.Data[lhs.Size() - i - 1];
             } else {
-                sum = lhs.Data[lhs.NumSize - i - 1] + rhs.Data[rhs.NumSize - i - 1];
+                sum = lhs.Data[lhs.Size() - i - 1] + rhs.Data[rhs.Size() - i - 1];
             }
             if (flag) {
                 ++sum;
             }
-            if (sum >= res.MaxDigit) {
-                sum = sum - res.MaxDigit;
+            if (sum >= TBigNum::MAX_DIGIT) {
+                sum = sum - TBigNum::MAX_DIGIT;
                 flag = true;
             } else {
                 flag = false;
@@ -117,27 +113,26 @@ public:
         }
         if (flag) {
             res.Data.push_back(1);
-            ++res.NumSize;
         }
         res.Normalize();
         return res;
     }
 
     friend TBigNum operator - (const TBigNum & lhs, const TBigNum & rhs) {
-        TBigNum res(lhs.NumSize);
+        TBigNum res(lhs.Size());
         bool flag = false;
-        for (size_t i = 0; i < lhs.NumSize; ++i) {
+        for (size_t i = 0; i < lhs.Size(); ++i) {
             int64_t diff;
-            if (i > rhs.NumSize - 1) {
-                diff = lhs.Data[lhs.NumSize - i - 1];
+            if (i > rhs.Size() - 1) {
+                diff = lhs.Data[lhs.Size() - i - 1];
             } else {
-                diff = lhs.Data[lhs.NumSize - i - 1] - rhs.Data[rhs.NumSize - i - 1];
+                diff = lhs.Data[lhs.Size() - i - 1] - rhs.Data[rhs.Size() - i - 1];
             }
             if (flag) {
                 --diff;
             }
             if (diff < 0) {
-                diff = diff + res.MaxDigit;
+                diff = diff + TBigNum::MAX_DIGIT;
                 flag = true;
             } else {
                 flag = false;
@@ -145,35 +140,31 @@ public:
             res.Data[i] = diff;
         }
         if (flag) {
-            --res.Data[res.NumSize - 1];
+            --res.Data.back();
         }
         res.Normalize();
         return res;
     }
 
     friend TBigNum operator * (const TBigNum & lhs, const TBigNum & rhs) {
-        TBigNum res(lhs.NumSize + rhs.NumSize);
-        for (size_t i = 0; i < lhs.NumSize; ++i) {
-            for (size_t j = 0; j < rhs.NumSize; ++j) {
-                res.Data[i + j] = res.Data[i + j] + lhs.Data[lhs.NumSize - i - 1] * rhs.Data[rhs.NumSize - j - 1];
+        TBigNum res(lhs.Size() + rhs.Size());
+        for (size_t i = 0; i < lhs.Size(); ++i) {
+            for (size_t j = 0; j < rhs.Size(); ++j) {
+                res.Data[i + j] = res.Data[i + j] + lhs.Data[lhs.Size() - i - 1] * rhs.Data[rhs.Size() - j - 1];
             }
         }
-        for (size_t i = 0; i < lhs.NumSize + rhs.NumSize - 1; ++i) {
-            res.Data[i + 1] = res.Data[i + 1] + res.Data[i] / res.MaxDigit;
-            res.Data[i] = res.Data[i] % res.MaxDigit;
+        for (size_t i = 0; i < res.Size() - 1; ++i) {
+            res.Data[i + 1] = res.Data[i + 1] + res.Data[i] / TBigNum::MAX_DIGIT;
+            res.Data[i] = res.Data[i] % TBigNum::MAX_DIGIT;
         }
         res.Normalize();
         return res;
     }
 
     friend TBigNum operator ^ (TBigNum lhs, TBigNum rhs) {
-        TBigNum res(1);
-        res.Data[0] = 1;
-
-        TBigNum two(1);
-        two.Data[0] = 2;
-
-        while (rhs.NumSize > 0 and rhs.Data[0] > 0) {
+        TBigNum res("1");
+        TBigNum two("2");
+        while (rhs.Size() > 0 and rhs.Data[0] > 0) {
             TBigNum div, mod;
             DivMod(rhs, two, div, mod);
             if (mod.Data[0] > 0) {
@@ -192,10 +183,10 @@ public:
     }
 
     friend bool operator < (const TBigNum & lhs, const TBigNum & rhs) {
-        if (lhs.NumSize != rhs.NumSize) {
-            return lhs.NumSize < rhs.NumSize;
+        if (lhs.Size() != rhs.Size()) {
+            return lhs.Size() < rhs.Size();
         }
-        for (size_t i = 0; i < lhs.NumSize; ++i) {
+        for (size_t i = 0; i < lhs.Size(); ++i) {
             if (lhs.Data[i] != rhs.Data[i]) {
                 return lhs.Data[i] < rhs.Data[i];
             }
@@ -204,10 +195,10 @@ public:
     }
 
     friend bool operator > (const TBigNum & lhs, const TBigNum & rhs) {
-        if (lhs.NumSize != rhs.NumSize) {
-            return lhs.NumSize > rhs.NumSize;
+        if (lhs.Size() != rhs.Size()) {
+            return lhs.Size() > rhs.Size();
         }
-        for (size_t i = 0; i < lhs.NumSize; ++i) {
+        for (size_t i = 0; i < lhs.Size(); ++i) {
             if (lhs.Data[i] != rhs.Data[i]) {
                 return lhs.Data[i] > rhs.Data[i];
             }
@@ -216,10 +207,10 @@ public:
     }
 
     friend bool operator == (const TBigNum & lhs, const TBigNum & rhs) {
-        if (lhs.NumSize != rhs.NumSize) {
+        if (lhs.Size() != rhs.Size()) {
             return false;
         }
-        for (size_t i = 0; i < lhs.NumSize; ++i) {
+        for (size_t i = 0; i < lhs.Size(); ++i) {
             if (lhs.Data[i] != rhs.Data[i]) {
                 return false;
             }
@@ -229,17 +220,11 @@ public:
 
     friend std::ostream & operator << (std::ostream & out, const TBigNum & num) {
         out << num.Data[0];
-        for (size_t i = 1; i < num.NumSize; ++i) {
-            if (num.Data[i] == 0) {
-                for (int64_t j = 0; j < num.Radix; ++j) {
-                    out << '0';
-                }
-                continue;
-            }
-            int64_t curDigit = num.MaxDigit / num.Base;
-            while (num.Data[i] / curDigit == 0) {
+        for (size_t i = 1; i < num.Size(); ++i) {
+            int64_t curDigit = TBigNum::MAX_DIGIT / TBigNum::BASE;
+            while (curDigit >= TBigNum::BASE - 1 and num.Data[i] / curDigit == 0) {
                 out << '0';
-                curDigit = curDigit / num.Base;
+                curDigit = curDigit / TBigNum::BASE;
             }
             out << num.Data[i];
         }
