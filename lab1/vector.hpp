@@ -9,13 +9,13 @@ private:
 	T * Data;
 public:
 	void Assign(const size_t & n, T elem);
-    void Clear();
+	void Clear();
 	void PushBack(T elem);
 	size_t Size();
 	TVector();
 	TVector(const size_t & n);
 	TVector(const size_t & n, T elem);
-    TVector(const TVector<T> & another);
+	TVector(const TVector<T> & another);
 	~TVector();
 	T & operator[](const size_t & index);
 };
@@ -31,7 +31,7 @@ template<class T>
 void TVector<T>::Clear() {
 	Capacity = 0;
 	MaxSize = 0;
-    delete [] Data;
+	delete [] Data;
 	Data = nullptr;
 }
 
@@ -85,9 +85,9 @@ TVector<T>::TVector(const TVector<T> & another) {
 	Capacity = another.Capacity;
 	MaxSize = another.MaxSize;
 	Data = new T[Capacity];
-    for (size_t i = 0; i < Capacity; ++i) {
-        Data[i] = another.Data[i];
-    }
+	for (size_t i = 0; i < Capacity; ++i) {
+		Data[i] = another.Data[i];
+	}
 }
 
 template<class T>
